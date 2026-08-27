@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tres meses, un mundo por cruzar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500;1,9..144,600&family=Work+Sans:wght@400;500;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-night: #12142b;
+    --bg-night-2: #1b1e3d;
+    --panel-blue: #232761;
+    --thread-blue: #7c8bff;
+    --button-gold: #e6b85e;
+    --thread-red: #c6544b;
+    --parchment: #f6efe0;
+    --parchment-2: #ece1c8;
+    --ink: #2a2438;
+    --ink-soft: #4a3f52;
+    --mist: #c3c6ea;
+    --mist-dim: #8d92c4;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; min-height:100%;
+    background: radial-gradient(circle at 50% 0%, var(--bg-night-2), var(--bg-night) 70%);
+    font-family:'Work Sans', sans-serif;
+    color: var(--mist);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding: 28px 14px 20px;
+    overflow-x:hidden;
+  }
+  h1,h2,h3{ font-family:'Fraunces', serif; margin:0; }
+  button{ font-family:inherit; }
+
+  /* ---------- ambient stars (whole page backdrop) ---------- */
+  .ambient-sky{ position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
+  .ambient-sky .star{ position:absolute; width:2px; height:2px; background:var(--mist); border-radius:50%; opacity:.15; animation: twinkle 4s ease-in-out infinite; }
+  @keyframes twinkle{ 0%,100%{opacity:.1;} 50%{opacity:.7;} }
+  @media (prefers-reduced-motion: reduce){ .ambient-sky .star{ animation:none; opacity:.3; } }
+
+  /* ---------- layout ---------- */
+  .stage{ position:relative; z-index:1; width:100%; max-width:460px; display:flex; flex-direction:column; align-items:center; gap:16px; }
+  .eyebrow{ font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--button-gold); text-align:center; }
+
+  .book{ position:relative; width:100%; aspect-ratio:3/4.15; perspective:1700px; }
+  .book::before, .book::after{
+    content:""; position:absolute; inset:0; border-radius:6px 12px 12px 6px;
+    background:var(--parchment-2); z-index:0;
+  }
+  .book::before{ transform:translate(5px,6px); opacity:.55; }
+  .book::after{ transform:translate(9px,11px); opacity:.3; }
+
+  .page-stack{ position:relative; width:100%; height:100%; z-index:1; }
+  .page{
+    position:absolute; inset:0; border-radius:6px 12px 12px 6px;
+    opacity:0; pointer-events:none; z-index:1;
+    transform: rotateY(0deg); transform-origin:left center; backface-visibility:hidden;
+    transition: transform .75s cubic-bezier(.55,0,.2,1), opacity .55s ease;
+    box-shadow:0 24px 55px -18px rgba(0,0,0,.6);
+    overflow:hidden;
+  }
+  .page.active{ opacity:1; pointer-events:auto; z-index:3; }
+  .page.flip-out{ transform: rotateY(var(--flip-deg,-140deg)); opacity:.08; z-index:4; }
+  @media (prefers-reduced-motion: reduce){
+    .page{ transition: opacity .4s ease; }
+    .page.flip-out{ transform:none; }
+  }
+
+  .page-inner{ position:absolute; inset:0; padding:26px 24px 22px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .page-inner::-webkit-scrollbar{ width:5px; }
+  .page-inner::-webkit-scrollbar-thumb{ background:rgba(0,0,0,.15); border-radius:3px; }
+
+  .page.parchment{ background:linear-gradient(180deg,var(--parchment),var(--parchment-2)); color:var(--ink); }
+  .page.night{ background:linear-gradient(180deg,var(--panel-blue),var(--bg-night)); color:var(--mist); }
+
+  .chapter-num{ font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--thread-red); margin-bottom:6px; }
+  .chapter-title{ font-style:italic; font-weight:600; font-size:22px; margin-bottom:12px; color:#4a2f2f; }
+  .page.night .chapter-title{ color:var(--button-gold); }
+  .page p{ font-size:14.5px; line-height:1.62; margin:0 0 12px; }
+  .page ul{ margin:0 0 12px; padding-left:18px; }
+  .page li{ font-size:14px; line-height:1.6; margin-bottom:6px; }
+
+  /* ---------- cover ---------- */
+  .cover-sky{ position:absolute; inset:0; overflow:hidden; }
+  .cover-sky .star{ position:absolute; width:2px; height:2px; background:var(--mist); border-radius:50%; animation: twinkle 3.4s ease-in-out infinite; }
+  .cover-body{ position:relative; z-index:1; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 26px; gap:14px; }
+  .cover-title{ font-style:italic; font-weight:600; font-size:29px; line-height:1.25; color:#f7ead0; text-shadow:0 0 22px rgba(230,184,94,.35); animation: glow 3.2s ease-in-out infinite; }
+  @keyframes glow{ 0%,100%{ text-shadow:0 0 14px rgba(230,184,94,.25);} 50%{ text-shadow:0 0 26px rgba(230,184,94,.5);} }
+  .cover-sub{ font-size:12px; letter-spacing:.14em; color:var(--mist-dim); text-transform:uppercase; }
+  .cover-open{ margin-top:10px; background:var(--button-gold); color:#3a2a12; border:none; padding:10px 22px; border-radius:22px; font-size:13px; font-weight:600; letter-spacing:.04em; cursor:pointer; box-shadow:0 6px 18px -6px rgba(230,184,94,.6); }
+  .cover-open:focus-visible{ outline:2px solid var(--thread-blue); outline-offset:3px; }
+  @media (prefers-reduced-motion: reduce){ .cover-title{ animation:none; } }
+
+  /* ---------- chapter I: milo (soundwave) ---------- */
+  .bars-wrap{ position:relative; height:78px; margin:6px 0 16px; border-radius:8px; overflow:hidden; background:rgba(35,39,97,.06); }
+  canvas.bars{ width:100%; height:100%; display:block; }
+  .months{ display:flex; gap:10px; margin:4px 0 4px; }
+  .month-btn{
+    flex:1; border:none; border-radius:50%; aspect-ratio:1; cursor:pointer; position:relative;
+    background: radial-gradient(circle at 35% 30%,#fff7e0,var(--button-gold) 72%);
+    box-shadow: inset 0 0 0 2px rgba(74,47,47,.25), 0 3px 6px rgba(0,0,0,.2);
+    font-family:'Fraunces', serif; font-weight:700; color:#4a2f2f;
+  }
+  .month-btn::before, .month-btn::after{ content:""; position:absolute; width:3px; height:3px; background:#4a2f2f; border-radius:50%; top:50%; left:50%; }
+  .month-btn::before{ transform:translate(-6px,-6px); }
+  .month-btn::after{ transform:translate(3px,3px); }
+  .memory{ max-height:0; overflow:hidden; transition:max-height .35s ease; font-size:13px; font-style:italic; color:#5a4a4a; border-left:2px solid var(--thread-red); padding-left:8px; margin:0; }
+  .memory.open{ max-height:70px; margin-top:6px; margin-bottom:6px; }
+
+  /* ---------- chapter II: llegada (merge) ---------- */
+  .meet-wrap{ position:relative; height:110px; margin:8px 0 14px; }
+  .orb{ position:absolute; top:50%; width:24px; height:24px; border-radius:50%; transform:translateY(-50%); box-shadow:0 0 26px 8px currentColor; transition: left 1.5s cubic-bezier(.3,.7,.3,1), right 1.5s cubic-bezier(.3,.7,.3,1); }
+  .orb-left{ left:4%; background:var(--thread-blue); color:var(--thread-blue); }
+  .orb-right{ right:4%; background:var(--button-gold); color:var(--button-gold); }
+  .meet-wrap.meet .orb-left{ left:46%; }
+  .meet-wrap.meet .orb-right{ right:46%; }
+  .burst{ position:absolute; top:50%; left:50%; width:10px; height:10px; margin:-5px 0 0 -5px; border-radius:50%; background:#fff3d6; opacity:0; transform:scale(.2); box-shadow:0 0 0 0 rgba(230,184,94,.5); transition: opacity .6s ease .9s, transform .6s ease .9s, box-shadow .8s ease .9s; }
+  .meet-wrap.meet .burst{ opacity:1; transform:scale(1); box-shadow:0 0 40px 18px rgba(230,184,94,.35); }
+  .replay{ background:none; border:1px solid rgba(74,47,47,.25); color:#5a4a4a; font-size:11px; padding:5px 12px; border-radius:14px; cursor:pointer; letter-spacing:.04em; }
+
+  /* ---------- chapter III: rutina (leaves) ---------- */
+  .leaves-wrap{ position:relative; height:96px; margin:6px 0 14px; border-radius:8px; overflow:hidden; background:rgba(35,39,97,.06); }
+  canvas.leaves{ width:100%; height:100%; display:block; }
+
+  /* ---------- chapter IV: portales (Coraline / Star Wars / Dark) ---------- */
+  .portals{ display:flex; gap:9px; margin:6px 0 14px; }
+  .portal{
+    flex:1; border-radius:12px; padding:12px 6px 10px; display:flex; flex-direction:column;
+    align-items:center; text-align:center; gap:6px;
+    opacity:0; transform:translateY(10px) scale(.94);
+    transition: opacity .5s ease, transform .5s cubic-bezier(.3,1.4,.4,1);
+  }
+  .portal.show{ opacity:1; transform:translateY(0) scale(1); }
+  .portal-door{ background:linear-gradient(180deg,var(--panel-blue),#171a3d); }
+  .portal-stars{ background:linear-gradient(180deg,#0d0f24,#171a3d); }
+  .portal-loop{ background:linear-gradient(180deg,#20202a,#171a3d); }
+  .portal-icon{ position:relative; width:100%; height:46px; display:flex; align-items:center; justify-content:center; }
+  .portal-label{ font-family:'Fraunces', serif; font-weight:600; font-size:11.5px; color:var(--button-gold); }
+  .portal-caption{ font-size:9.5px; line-height:1.35; color:var(--mist-dim); }
+
+  .p-door-leaf{ width:20px; height:32px; border:1.5px dashed rgba(124,139,255,.55); border-radius:4px; position:relative; }
+  .p-knob{ position:absolute; width:5px; height:5px; border-radius:50%; background:var(--button-gold); top:50%; right:2px; transform:translateY(-50%); }
+
+  .p-star{ position:absolute; width:3px; height:3px; background:#fff; border-radius:50%; animation: twinkle 2.6s ease-in-out infinite; }
+  .p-planet{ width:16px; height:16px; border-radius:50%; background:radial-gradient(circle at 35% 30%,#ffe9b8,var(--button-gold) 75%); box-shadow:0 0 12px 2px rgba(230,184,94,.4); }
+
+  .p-loop-symbol{ font-size:28px; color:var(--button-gold); display:inline-block; animation: spin 9s linear infinite; }
+  @media (prefers-reduced-motion: reduce){ .p-loop-symbol, .p-star{ animation:none; } }
+
+  /* ---------- chapter V: puerta ---------- */
+  .door-box{ position:relative; height:150px; margin:10px 0 16px; perspective:1000px; border-radius:8px; overflow:hidden; }
+  .door-back{ position:absolute; inset:0; background:linear-gradient(180deg,#2a2e63,#171a3d); display:flex; align-items:center; justify-content:center; text-align:center; padding:14px; }
+  .door-back p{ font-size:12.5px; color:var(--mist-dim); font-style:italic; margin:0; }
+  .door-leaf{
+    position:absolute; inset:0; background:linear-gradient(180deg,var(--panel-blue),#14173a);
+    transform-origin:left center; transform-style:preserve-3d; transition: transform .9s cubic-bezier(.6,0,.2,1);
+    cursor:pointer; border:none; padding:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+  }
+  .door-leaf:focus-visible{ outline:2px solid var(--thread-blue); outline-offset:-4px; }
+  .door-box.open .door-leaf{ transform: rotateY(-108deg); box-shadow:16px 0 30px rgba(0,0,0,.45); }
+  .stitch{ position:absolute; border:1px dashed rgba(124,139,255,.35); border-radius:8px; }
+  .stitch.outer{ inset:10px; }
+  .stitch.inner{ inset:18px; border-color:rgba(230,184,94,.3); }
+  .plaque{ background:var(--button-gold); color:#3a2a12; font-family:'Fraunces', serif; font-weight:600; font-size:12px; padding:4px 14px; border-radius:3px; }
+  .knob{ width:16px; height:16px; border-radius:50%; background:radial-gradient(circle at 35% 30%,#fff7e0,var(--button-gold) 75%); box-shadow:0 2px 5px rgba(0,0,0,.4); }
+  .door-caption{ font-family:'Fraunces', serif; font-style:italic; color:var(--mist-dim); font-size:12px; }
+  .ray{ position:absolute; top:50%; left:50%; width:2px; height:0; background:linear-gradient(180deg,#fff3d6,transparent); transform-origin:top center; animation: rayburst .7s ease-out forwards; }
+  .ray-warm{ position:absolute; top:0; left:50%; width:2px; height:0; background:linear-gradient(180deg,var(--button-gold),transparent); transform-origin:top center; animation: rayburst .7s ease-out forwards; }
+  @keyframes rayburst{ from{ height:0; opacity:1;} to{ height:70px; opacity:0;} }
+
+  /* ---------- chapter VI: promesa ---------- */
+  .ring-wrap{ display:flex; justify-content:center; margin:10px 0 16px; }
+  .ring{ position:relative; width:118px; height:118px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-direction:column; border:2px dashed var(--thread-blue); }
+  .page.active .ring{ animation: spin 18s linear infinite, pulse 2.6s ease-in-out infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @keyframes pulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(124,139,255,.25);} 50%{ box-shadow:0 0 0 10px rgba(124,139,255,0);} }
+  .ring-num{ font-family:'Fraunces', serif; font-weight:700; font-size:28px; color:#4a2f2f; }
+  .ring-label{ font-size:10px; text-transform:uppercase; letter-spacing:.14em; color:#5a4a4a; }
+  @media (prefers-reduced-motion: reduce){ .ring{ animation:none !important; } }
+  .hourglass-wrap{ display:flex; flex-direction:column; align-items:center; gap:8px; margin:4px 0 16px; }
+  .hourglass{ position:relative; width:68px; height:128px; }
+  .bulb-top, .bulb-bottom{ position:absolute; left:0; width:100%; height:60px; border:1px solid rgba(74,47,47,.3); overflow:hidden; background:rgba(35,39,97,.05); }
+  .bulb-top{ top:0; clip-path:polygon(6% 0,94% 0,50% 100%); }
+  .bulb-bottom{ bottom:0; clip-path:polygon(50% 0,94% 100%,6% 100%); }
+  .sand-top{ position:absolute; top:0; left:0; width:100%; height:60px; clip-path:polygon(6% 0,94% 0,50% 100%);
+    background:linear-gradient(to top, var(--button-gold) 0%, var(--button-gold) var(--fill,0%), transparent var(--fill,0%), transparent 100%); }
+  .sand-bottom{ position:absolute; bottom:0; left:0; width:100%; height:60px; clip-path:polygon(50% 0,94% 100%,6% 100%);
+    background:linear-gradient(to top, var(--button-gold) 0%, var(--button-gold) var(--fill,0%), transparent var(--fill,0%), transparent 100%); }
+  .grains{ position:absolute; left:50%; top:58px; width:2px; height:12px; pointer-events:none; }
+  .grain{ position:absolute; left:-1px; top:0; width:2px; height:2px; background:var(--button-gold); border-radius:50%; animation: fallGrain 1s linear forwards; }
+  @keyframes fallGrain{ from{ transform:translateY(0); opacity:1;} to{ transform:translateY(12px); opacity:0;} }
+  .hourglass-label{ font-family:'Fraunces', serif; font-style:italic; font-size:11.5px; color:#5a4a4a; text-align:center; max-width:220px; }
+  @media (prefers-reduced-motion: reduce){ .grain{ animation:none; opacity:0; } }
+  .signature{ font-family:'Caveat', cursive; font-size:22px; color:#4a2f2f; text-align:right; margin-top:6px; }
+  .closing-note{ text-align:center; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--mist-dim); margin-top:16px; }
+
+  /* ---------- secret page: destellos ---------- */
+  .sparkle-wrap{ position:relative; height:70px; margin:6px 0 14px; border-radius:8px; overflow:hidden; background:rgba(230,184,94,.05); }
+  canvas.sparkles{ width:100%; height:100%; display:block; }
+  .secret-list{ list-style:none; margin:0; padding:0; }
+  .secret-list li{
+    font-family:'Fraunces', serif; font-style:italic; font-size:15px; color:var(--mist);
+    padding:9px 0; border-bottom:1px dashed rgba(195,198,234,.18);
+  }
+  .secret-list li:last-child{ border-bottom:none; }
+
+  /* ---------- final oculto ---------- */
+  .last-memory-wrap{ position:relative; }
+  .last-memory-btn{
+    display:block; margin:18px auto 0; background:none; border:1px solid rgba(74,47,47,.25);
+    color:#5a4a4a; font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+    padding:7px 16px; border-radius:16px; cursor:pointer;
+  }
+  .last-memory{
+    max-height:0; overflow:hidden; opacity:0; transition: max-height .7s ease, opacity .8s ease;
+    text-align:center; margin-top:0;
+  }
+  .last-memory.open{ max-height:160px; opacity:1; margin-top:14px; }
+  .last-memory p{ font-family:'Caveat', cursive; font-size:19px; color:#4a2f2f; line-height:1.5; }
+
+  /* ---------- nav ---------- */
+  .controls{ display:flex; align-items:center; justify-content:center; gap:18px; }
+  .nav-btn{ width:38px; height:38px; border-radius:50%; border:1px solid rgba(195,198,234,.25); background:rgba(255,255,255,.04); color:var(--mist); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition: opacity .2s ease; }
+  .nav-btn:disabled{ opacity:.25; cursor:default; }
+  .nav-btn:focus-visible{ outline:2px solid var(--thread-blue); outline-offset:2px; }
+  .dots{ display:flex; gap:7px; }
+  .dot{ width:7px; height:7px; border-radius:50%; background:var(--mist-dim); border:none; padding:0; cursor:pointer; opacity:.5; transition: opacity .2s ease, transform .2s ease; }
+  .dot.current{ background:var(--button-gold); opacity:1; transform:scale(1.35); }
+  .caption{ font-size:11px; color:var(--mist-dim); text-align:center; letter-spacing:.06em; }
+</style>
+</head>
+<body>
+
+<div class="ambient-sky" id="ambientSky"></div>
+
+<div class="stage">
+  <div class="eyebrow">un libro pequeño para Marlyn</div>
+
+  <div class="book">
+    <div class="page-stack" id="pageStack">
+
+      <!-- COVER -->
+      <section class="page night active" data-theme="cover">
+        <div class="page-inner" style="padding:0;">
+          <div class="cover-sky" id="coverSky"></div>
+          <div class="cover-body">
+            <div class="cover-sub">para Marlyn</div>
+            <h1 class="cover-title" style="font-size:clamp(21px,6vw,28px);">Tres meses contigo antes de nuestro primer abrazo</h1>
+            <p style="font-size:12.5px; color:var(--mist-dim); max-width:270px;">Un pequeño recuerdo de estos meses, de todo lo que hemos vivido a pesar de la distancia y de la emoción que tengo por ese día en el que finalmente estaremos frente a frente.</p>
+            <button class="cover-open" id="openBook">abrir el libro</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- I. MILO -->
+      <section class="page parchment" data-theme="milo">
+        <div class="page-inner">
+          <div class="chapter-num">Capítulo I</div>
+          <h2 class="chapter-title">el día que una conversación empezó a importar</h2>
+          <p>Hace tres meses no sabía que una conversación cualquiera iba a terminar convirtiéndose en una de las partes favoritas de mi día.</p>
+          <p>Al principio eran mensajes. Después, llamadas. Después, esas noches donde ninguno quería despedirse aunque ya no tuviéramos nada nuevo que contarnos.</p>
+          <p>Recuerdo cuando todo comenzó con esos primeros coqueteos, cuando te decía "Que estabas muy bonita" y empezamos con esos halagos que a los dos nos ponían nerviosos. Fue ahí cuando supe que había algo distinto contigo — todo se sentía demasiado hermoso y bonito.</p>
+          <p>Me encanta imaginar estar contigo así, más cerca, aunque el mundo entero esté de por medio. También quiero que sepas que amo tus inseguridades, esas que poco a poco has ido superando — para mí siempre han sido parte de lo más hermoso que tienes. Pase lo que pase y venga lo que venga, siempre voy a estar ahí, a tu lado, porque eres la mujer con la que quiero estar el resto de mi vida. Gracias por todo lo que me das, y por todo lo que haces por mí.</p>
+          <p>Todavía me parece raro pensar que alguien que estaba tan lejos terminó siendo la persona a la que más ganas tengo de contarle cualquier cosa. Desde un meme tonto hasta cómo estuvo mi día.</p>
+          <p>Me gusta verte cuando crees que nadie te está mirando. Cuando sonríes por algo que dices, cuando haces alguna expresión rara, o cuando intentas disimular que algo te dio risa.</p>
+          <p>Hay momentos que parecen simples pero para mí significan mucho. Como quedarnos en llamada sin hablar demasiado, solo porque ninguno de los dos quiere colgar.</p>
+          <p>Y aquí seguimos, tres meses después, todavía con ganas de contarnos cualquier cosa.</p>
+          <div class="bars-wrap"><canvas class="bars"></canvas></div>
+          <div class="months">
+            <button class="month-btn" data-memory="mem1">1</button>
+            <button class="month-btn" data-memory="mem2">2</button>
+            <button class="month-btn" data-memory="mem3">3</button>
+          </div>
+          <p id="mem1" class="memory">Dormir "juntos" en llamada, sin decir casi nada, solo queriendo estar ahí el uno para el otro.</p>
+          <p id="mem2" class="memory">Te armaste de valor y por fin prendiste la cámara. Fue la primera vez que te vi de verdad, no en fotos.</p>
+          <p id="mem3" class="memory">27 de julio, 8:59 de la mañana — la hora exacta en que te vi por primera vez. La tengo anotada como una fecha importante.</p>
+        </div>
+      </section>
+
+      <!-- II. LLEGADA -->
+      <section class="page parchment" data-theme="llegada">
+        <div class="page-inner">
+          <div class="chapter-num">Capítulo II</div>
+          <h2 class="chapter-title">el día que por fin voy a estar a tu lado</h2>
+          <p>El 12 de octubre es una fecha que tengo marcada desde hace mucho.</p>
+          <p>Después de tantos días hablando, de tantas llamadas y de tantas veces imaginando cómo sería ese momento, finalmente vamos a vernos.</p>
+          <div class="meet-wrap" id="meetWrap">
+            <div class="orb orb-left"></div>
+            <div class="orb orb-right"></div>
+            <div class="burst"></div>
+          </div>
+          <p style="font-size:12px; color:var(--mist-dim); text-align:center; margin-top:-6px;">📍 Mr Joys · Guayaquil</p>
+          <p>Tengo que admitir que estoy nervioso. Mucho.</p>
+          <p>Creo que voy a mirar el reloj mil veces antes de verte llegar. Seguramente voy a pensar qué decir, y cuando estés frente a mí probablemente se me olvide todo.</p>
+          <p>Lo único que sé es que voy a estar feliz.</p>
+          <p>Voy a poder escuchar tu voz estando a tu lado, mirarte sin depender de una cámara, y vivir algo que durante meses solamente imaginamos.</p>
+          <p>No espero que ese día sea perfecto. Espero que sea nuestro.</p>
+          <button class="replay" id="replayMeet">ver de nuevo</button>
+        </div>
+      </section>
+
+      <!-- III. RUTINA (usada como capítulo de gratitud) -->
+      <section class="page parchment" data-theme="rutina">
+        <div class="page-inner">
+          <div class="chapter-num">Capítulo III</div>
+          <h2 class="chapter-title">la persona que llegó a cambiar mis días</h2>
+          <div class="leaves-wrap"><canvas class="leaves"></canvas></div>
+          <p>Me gusta tenerte en mi vida.</p>
+          <p>Me gusta esa sensación de saber que hay alguien con quien puedo hablar, alguien que logra sacarme una sonrisa incluso cuando mi día no fue el mejor.</p>
+          <p>Nunca pensé que una persona que conocí de esta manera pudiera llegar a ser tan importante para mí.</p>
+          <p>Pero aquí estamos.</p>
+          <p>Recuerdo cuando discutíamos por cosas pequeñas al principio, más que todo porque apenas nos estábamos conociendo y no siempre nos entendíamos del todo. Pero a los pocos minutos ya estábamos riendo otra vez, como si nada hubiera pasado.</p>
+          <p>Entre tantas personas en el mundo terminé encontrando a alguien que me hace sentir acompañado, alguien con quien puedo ser yo y alguien que poco a poco se volvió parte de mi rutina.</p>
+          <p>Gracias por cada risa, por cada conversación y por cada momento en el que estuviste conmigo.</p>
+          <p>Gracias por ser tú.</p>
+        </div>
+      </section>
+
+      <!-- IV. MAPA + lista (lugares y planes juntos) -->
+      <section class="page parchment" data-theme="mapa">
+        <div class="page-inner">
+          <div class="chapter-num">Capítulo IV</div>
+          <h2 class="chapter-title">todo lo que todavía nos falta vivir</h2>
+          <p>Hasta ahora hemos creado recuerdos desde lejos.</p>
+          <p>Hemos tenido llamadas, conversaciones, momentos bonitos y experiencias que, aunque fueron a distancia, para mí fueron reales.</p>
+          <p>Pero me emociona pensar en todo lo que todavía falta.</p>
+          <p>Quiero vivir esos momentos simples contigo. Caminar juntos sin estar mirando una pantalla, salir sin preocuparnos por la conexión, reírnos por cualquier tontería y crear recuerdos que podamos mirar después y decir: "¿te acuerdas de ese día?"</p>
+          <p>Quiero hacer cosas normales contigo.</p>
+          <p>Porque muchas veces las cosas más pequeñas terminan siendo las más importantes.</p>
+          <p>Quiero conocer lugares contigo, descubrir cosas nuevas y tener momentos que solamente sean nuestros. Como estos, por ejemplo:</p>
+          <div class="portals" id="portals">
+            <div class="portal portal-door">
+              <div class="portal-icon"><div class="p-door-leaf"><span class="p-knob"></span></div></div>
+              <div class="portal-label">Mr Joys</div>
+            </div>
+            <div class="portal portal-stars">
+              <div class="portal-icon">
+                <span class="p-star" style="top:15%;left:25%;"></span>
+                <span class="p-star" style="top:65%;left:70%;"></span>
+                <span class="p-star" style="top:75%;left:20%;"></span>
+                <span class="p-star" style="top:20%;left:78%;"></span>
+                <div class="p-planet"></div>
+              </div>
+              <div class="portal-label">Guayaquil</div>
+            </div>
+          </div>
+          <p style="font-style:italic; font-size:12px; color:var(--mist-dim);">(sí, ya sé cuánto te gusta Coraline — no me pude aguantar meterle un guiño ahí arriba, en esa puerta.)</p>
+        </div>
+      </section>
+
+      <!-- V. PUERTA (reinterpretada: tu lugar favorito) -->
+      <section class="page parchment" data-theme="puerta">
+        <div class="page-inner">
+          <div class="chapter-num">Capítulo V</div>
+          <h2 class="chapter-title">donde estés tú, ahí quiero estar</h2>
+          <p>Si algo he aprendido estos meses es que no necesito grandes cosas para estar feliz contigo.</p>
+          <p>A veces solamente necesito verte, escuchar tu voz o hablar contigo un rato.</p>
+          <div class="door-box" id="doorBox">
+            <div class="door-back">
+              <p>aquí no hay ningún lugar nuevo que descubrir.<br>solo estás tú. y eso ya es mi lugar favorito.</p>
+            </div>
+            <button class="door-leaf" id="doorLeaf" aria-expanded="false" aria-label="Abrir">
+              <div class="stitch outer"></div>
+              <div class="stitch inner"></div>
+              <div class="plaque">Marlyn</div>
+              <div class="knob"></div>
+              <div class="door-caption">toca aquí</div>
+            </button>
+          </div>
+          <p>Cuando te digo que eres hermosa, no es solo por decir algo bonito: es que así te veo, así siento que eres tú, y de verdad eres demasiado maravillosa para mí. Y siempre lo vas a ser.</p>
+          <p>Tu sonrisa es una de mis cosas favoritas. Esa que veo en las videollamadas y que, aunque estés lejos, consigue hacerme sonreír también.</p>
+        </div>
+      </section>
+
+      <!-- SECRETA -->
+      <section class="page night" data-theme="secreto">
+        <div class="page-inner">
+          <div class="chapter-num" style="color:var(--button-gold);">Página secreta</div>
+          <h2 class="chapter-title" style="color:var(--button-gold);">cosas pequeñas que amo de ti</h2>
+          <div class="sparkle-wrap"><canvas class="sparkles"></canvas></div>
+          <ul class="secret-list">
+            <li>La forma en que sonríes.</li>
+            <li>Cómo cambia tu voz cuando estás feliz.</li>
+            <li>Cómo haces que una llamada normal se sienta especial.</li>
+            <li>Cómo logras que quiera contarte todo.</li>
+            <li>Lo bonita que eres, incluso en los días en que tú no lo crees.</li>
+            <li>Todo lo que provocas en mí sin siquiera proponértelo.</li>
+            <li>Cómo, simplemente con existir, ya me alegras el día.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- VI. PROMESA -->
+      <section class="page parchment" data-theme="promesa">
+        <div class="page-inner">
+          <div class="chapter-num">Capítulo VI</div>
+          <h2 class="chapter-title">tres meses juntos, pero apenas estamos comenzando</h2>
+          <p>Tres meses pueden parecer poco tiempo, pero para mí han significado muchísimo.</p>
+          <p>En estos meses conocí a una persona que terminó siendo mucho más importante de lo que imaginaba.</p>
+          <p>Aprendí cosas de ti, conocí tu forma de pensar, tus gustos, tus maneras de reaccionar y todos esos pequeños detalles que hacen que seas tú.</p>
+          <div class="ring-wrap">
+            <div class="ring">
+              <div class="ring-num" id="ringNum">…</div>
+              <div class="ring-label" id="ringLabel">días</div>
+            </div>
+          </div>
+          <div class="hourglass-wrap" id="hourglassWrap">
+            <div class="hourglass">
+              <div class="bulb-top"></div>
+              <div class="sand-top" id="sandTop"></div>
+              <div class="bulb-bottom"></div>
+              <div class="sand-bottom" id="sandBottom"></div>
+              <div class="grains" id="grains"></div>
+            </div>
+            <div class="hourglass-label" id="hourglassLabel">cayendo, grano a grano, hasta el 12 de octubre</div>
+          </div>
+          <p>Lo bonito es que después de estos tres meses sigo teniendo ganas de hablar contigo, sigo teniendo ganas de verte y sigo emocionándome cuando pienso en nosotros.</p>
+          <p>Gracias por llegar a mi vida.</p>
+          <p>Gracias por cada momento, por cada llamada y por hacer que estos meses sean algo que voy a recordar.</p>
+          <p>Por fin voy a poder hacer algo tan simple como caminar contigo sin preocuparme de que una llamada termine.</p>
+          <div class="signature">— Edward</div>
+          <div class="last-memory-wrap" id="lastMemoryWrap">
+            <button class="last-memory-btn" id="lastMemoryBtn">abrir último recuerdo</button>
+            <div class="last-memory" id="lastMemory">
+              <p>Si algún día volvemos a leer esto, quiero que recordemos algo: esto fue solamente el comienzo.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="nav-btn" id="prevBtn" aria-label="Página anterior">‹</button>
+    <div class="dots" id="dots"></div>
+    <button class="nav-btn" id="nextBtn" aria-label="Página siguiente">›</button>
+  </div>
+  <div class="caption" id="caption">portada</div>
+</div>
+
+<script>
+(function(){
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const pages = Array.from(document.querySelectorAll('.page'));
+  const dotsWrap = document.getElementById('dots');
+  const captionEl = document.getElementById('caption');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  let currentIndex = 0;
+  let animating = false;
+  const running = new Map();
+
+  // FIX: había 8 páginas (.page) en el HTML pero solo 7 títulos aquí —
+  // faltaba la página "Secreta" entre el Cap. V y el Cap. VI, lo que
+  // hacía que titles[currentIndex] devolviera undefined al llegar a esa
+  // página o a las siguientes, rompiendo el .toLowerCase().
+  const titles = ['Portada','Cap. I','Cap. II','Cap. III','Cap. IV','Cap. V','Secreto','Cap. VI'];
+
+  pages.forEach((p, i)=>{
+    const d = document.createElement('button');
+    d.className = 'dot' + (i===0 ? ' current' : '');
+    d.setAttribute('aria-label', 'Ir a ' + (titles[i] || ('Página ' + (i+1))));
+    d.addEventListener('click', ()=> goTo(i));
+    dotsWrap.appendChild(d);
+  });
+
+  function updateUI(){
+    dotsWrap.querySelectorAll('.dot').forEach((d,i)=> d.classList.toggle('current', i===currentIndex));
+    prevBtn.disabled = currentIndex === 0;
+    nextBtn.disabled = currentIndex === pages.length - 1;
+    // FIX: fallback por si en el futuro se agrega una página sin actualizar 'titles'
+    captionEl.textContent = (titles[currentIndex] || ('página ' + (currentIndex+1))).toLowerCase();
+  }
+
+  function destroyTheme(el){
+    const fn = running.get(el);
+    if(fn){ fn(); running.delete(el); }
+  }
+  function initTheme(el){
+    const theme = el.dataset.theme;
+    const controller = THEMES[theme];
+    if(!controller) return;
+    const fn = controller.init(el, reduceMotion);
+    if(fn) running.set(el, fn);
+  }
+
+  function goTo(newIndex){
+    if(animating || newIndex === currentIndex || newIndex < 0 || newIndex >= pages.length) return;
+    animating = true;
+    const direction = newIndex > currentIndex ? 'next' : 'prev';
+    const curEl = pages[currentIndex];
+    const nextEl = pages[newIndex];
+
+    destroyTheme(curEl);
+    nextEl.classList.add('active');
+    void nextEl.offsetWidth;
+
+    curEl.style.setProperty('--flip-deg', direction === 'next' ? '-140deg' : '140deg');
+    curEl.style.transformOrigin = direction === 'next' ? 'left center' : 'right center';
+    curEl.classList.add('flip-out');
+
+    const finish = ()=>{
+      curEl.classList.remove('active','flip-out');
+      curEl.style.transform = '';
+      currentIndex = newIndex;
+      updateUI();
+      initTheme(nextEl);
+      animating = false;
+      const h = nextEl.querySelector('h1, h2');
+      if(h){ h.setAttribute('tabindex','-1'); h.focus({preventScroll:true}); }
+    };
+
+    if(reduceMotion){
+      setTimeout(finish, 50);
+    } else {
+      let done = false;
+      const onEnd = (e)=>{ if(e.target===curEl && !done){ done=true; curEl.removeEventListener('transitionend', onEnd); finish(); } };
+      curEl.addEventListener('transitionend', onEnd);
+      setTimeout(()=>{ if(!done){ done=true; curEl.removeEventListener('transitionend', onEnd); finish(); } }, 900);
+    }
+  }
+
+  prevBtn.addEventListener('click', ()=> goTo(currentIndex - 1));
+  nextBtn.addEventListener('click', ()=> goTo(currentIndex + 1));
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'ArrowRight') goTo(currentIndex + 1);
+    if(e.key === 'ArrowLeft') goTo(currentIndex - 1);
+  });
+  document.getElementById('openBook').addEventListener('click', ()=> goTo(1));
+
+  document.querySelectorAll('.month-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.getElementById(btn.dataset.memory).classList.toggle('open');
+    });
+  });
+
+  function makeStars(container, count){
+    for(let i=0;i<count;i++){
+      const s = document.createElement('div');
+      s.className = 'star';
+      s.style.left = Math.random()*100+'%';
+      s.style.top = Math.random()*100+'%';
+      s.style.animationDelay = (Math.random()*3.5)+'s';
+      container.appendChild(s);
+    }
+  }
+  makeStars(document.getElementById('ambientSky'), 50);
+  makeStars(document.getElementById('coverSky'), 40);
+
+  const THEMES = {
+    milo: {
+      init(el, reduceMotion){
+        const canvas = el.querySelector('canvas.bars');
+        const ctx = canvas.getContext('2d');
+        function resize(){
+          canvas.width = canvas.clientWidth * (window.devicePixelRatio||1);
+          canvas.height = canvas.clientHeight * (window.devicePixelRatio||1);
+        }
+        resize();
+        const barCount = 26;
+        const start = performance.now();
+        let raf;
+        function draw(t){
+          const w = canvas.width, h = canvas.height;
+          ctx.clearRect(0,0,w,h);
+          const barW = w / barCount;
+          for(let i=0;i<barCount;i++){
+            const phase = i*0.45;
+            const amp = reduceMotion ? 0.35 : (0.25+0.55*Math.abs(Math.sin((t-start)/850 + phase)));
+            const barH = h*amp;
+            ctx.fillStyle = i%4===0 ? '#e6b85e' : '#7c8bff';
+            ctx.globalAlpha = 0.85;
+            ctx.fillRect(i*barW+barW*0.15, h-barH, barW*0.7, barH);
+          }
+          if(!reduceMotion) raf = requestAnimationFrame(draw);
+        }
+        draw(start);
+        window.addEventListener('resize', resize);
+        return ()=>{ if(raf) cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
+      }
+    },
+    llegada: {
+      init(el){
+        const wrap = el.querySelector('#meetWrap') || el.querySelector('.meet-wrap');
+        const replay = el.querySelector('#replayMeet');
+        function play(){
+          wrap.classList.remove('meet');
+          void wrap.offsetWidth;
+          requestAnimationFrame(()=> wrap.classList.add('meet'));
+        }
+        play();
+        replay && replay.addEventListener('click', play);
+        return ()=>{ wrap.classList.remove('meet'); replay && replay.removeEventListener('click', play); };
+      }
+    },
+    rutina: {
+      init(el, reduceMotion){
+        const canvas = el.querySelector('canvas.leaves');
+        const ctx = canvas.getContext('2d');
+        function resize(){
+          canvas.width = canvas.clientWidth * (window.devicePixelRatio||1);
+          canvas.height = canvas.clientHeight * (window.devicePixelRatio||1);
+        }
+        resize();
+        const n = 12;
+        const leaves = Array.from({length:n}, ()=> ({
+          x: Math.random(),
+          y: Math.random(),
+          s: 4+Math.random()*4,
+          speed: 0.0007+Math.random()*0.0008,
+          sway: Math.random()*Math.PI*2,
+          rot: Math.random()*Math.PI
+        }));
+        let raf;
+        function draw(){
+          const w = canvas.width, h = canvas.height;
+          ctx.clearRect(0,0,w,h);
+          leaves.forEach(l=>{
+            if(!reduceMotion){
+              l.y += l.speed;
+              l.sway += 0.01;
+              if(l.y > 1.1) l.y = -0.1;
+            }
+            const x = (l.x + Math.sin(l.sway)*0.03) * w;
+            const y = l.y * h;
+            ctx.save();
+            ctx.translate(x,y);
+            ctx.rotate(l.rot + (reduceMotion?0:l.sway*0.3));
+            ctx.fillStyle = '#c6544b';
+            ctx.globalAlpha = 0.55;
+            ctx.beginPath();
+            ctx.ellipse(0,0,l.s,l.s*0.55,0,0,Math.PI*2);
+            ctx.fill();
+            ctx.restore();
+          });
+          if(!reduceMotion) raf = requestAnimationFrame(draw);
+        }
+        draw();
+        window.addEventListener('resize', resize);
+        return ()=>{ if(raf) cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
+      }
+    },
+    mapa: {
+      init(el){
+        const portals = el.querySelectorAll('.portal');
+        portals.forEach((p,i)=>{
+          p.classList.remove('show');
+          p.style.transitionDelay = (0.15*i) + 's';
+        });
+        void el.offsetWidth;
+        requestAnimationFrame(()=> portals.forEach(p=> p.classList.add('show')));
+        return ()=>{ portals.forEach(p=> p.classList.remove('show')); };
+      }
+    },
+    puerta: {
+      init(el){
+        const box = el.querySelector('#doorBox') || el.querySelector('.door-box');
+        const leaf = el.querySelector('#doorLeaf') || el.querySelector('.door-leaf');
+        box.classList.remove('open');
+        leaf.setAttribute('aria-expanded','false');
+        function burst(){
+          const n = 10;
+          for(let i=0;i<n;i++){
+            const ray = document.createElement('div');
+            ray.className = 'ray';
+            ray.style.transform = 'rotate(' + (i*(360/n)) + 'deg)';
+            ray.style.animationDelay = (i*0.02)+'s';
+            box.appendChild(ray);
+            setTimeout(()=> ray.remove(), 900);
+          }
+        }
+        function open(){
+          if(box.classList.contains('open')) return;
+          box.classList.add('open');
+          leaf.setAttribute('aria-expanded','true');
+          burst();
+        }
+        leaf.addEventListener('click', open);
+        return ()=>{
+          box.classList.remove('open');
+          leaf.setAttribute('aria-expanded','false');
+          leaf.removeEventListener('click', open);
+        };
+      }
+    },
+    promesa: {
+      init(el, reduceMotion){
+        const numEl = el.querySelector('#ringNum');
+        const labelEl = el.querySelector('#ringLabel');
+        const target = new Date('2026-10-12T00:00:00-05:00');
+        const now = new Date();
+        const msPerDay = 24*60*60*1000;
+        const diff = Math.ceil((target - now) / msPerDay);
+        if(diff > 1){
+          numEl.textContent = diff;
+          labelEl.textContent = 'días';
+        } else if(diff === 1){
+          numEl.textContent = '1';
+          labelEl.textContent = 'día';
+        } else if(diff === 0){
+          numEl.textContent = '¡hoy!';
+          labelEl.textContent = 'es el día';
+        } else {
+          numEl.textContent = '♥';
+          labelEl.textContent = 'ya cruzamos la puerta';
+        }
+
+        // Reloj de arena: cae grano a grano hasta el 12 de octubre
+        const sandTop = el.querySelector('#sandTop');
+        const sandBottom = el.querySelector('#sandBottom');
+        const hgLabel = el.querySelector('#hourglassLabel');
+        const grainsEl = el.querySelector('#grains');
+        const totalRef = 45; // referencia de la cuenta regresiva
+        const daysLeft = Math.max(0, diff);
+        const remainingPct = Math.max(0, Math.min(1, daysLeft / totalRef)) * 100;
+        const elapsedPct = 100 - remainingPct;
+        if(sandTop) sandTop.style.setProperty('--fill', remainingPct + '%');
+        if(sandBottom) sandBottom.style.setProperty('--fill', elapsedPct + '%');
+        if(hgLabel){
+          hgLabel.textContent = daysLeft > 0
+            ? 'cayendo, grano a grano — faltan ' + daysLeft + (daysLeft===1 ? ' día' : ' días') + ' para vernos'
+            : 'el reloj ya se vació. es hoy.';
+        }
+
+        let grainInterval;
+        if(!reduceMotion && daysLeft > 0 && grainsEl){
+          grainInterval = setInterval(()=>{
+            const g = document.createElement('div');
+            g.className = 'grain';
+            grainsEl.appendChild(g);
+            setTimeout(()=> g.remove(), 1100);
+          }, 350);
+        }
+
+        return ()=>{ if(grainInterval) clearInterval(grainInterval); };
+      }
+    }
+  };
+
+  updateUI();
+})();
+</script>
+
+</body>
+</html>
