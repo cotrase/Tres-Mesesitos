@@ -313,7 +313,7 @@
         <div class="page-inner">
           <div class="chapter-num">Capítulo II</div>
           <h2 class="chapter-title">el día que por fin voy a estar a tu lado</h2>
-          <p>El 12 de octubre es una fecha que tengo marcada desde hace mucho.</p>
+          <p>El 10 de octubre es una fecha que tengo marcada desde hace mucho.</p>
           <p>Después de tantos días hablando, de tantas llamadas y de tantas veces imaginando cómo sería ese momento, finalmente vamos a vernos.</p>
           <div class="meet-wrap" id="meetWrap">
             <div class="orb orb-left"></div>
@@ -443,7 +443,7 @@
               <div class="sand-bottom" id="sandBottom"></div>
               <div class="grains" id="grains"></div>
             </div>
-            <div class="hourglass-label" id="hourglassLabel">cayendo, grano a grano, hasta el 12 de octubre</div>
+            <div class="hourglass-label" id="hourglassLabel">cayendo, grano a grano, hasta el 10 de octubre</div>
           </div>
           <p>Lo bonito es que después de estos tres meses sigo teniendo ganas de hablar contigo, sigo teniendo ganas de verte y sigo emocionándome cuando pienso en nosotros.</p>
           <p>Gracias por llegar a mi vida.</p>
@@ -508,10 +508,6 @@
   let animating = false;
   const running = new Map();
 
-  // FIX: había 8 páginas (.page) en el HTML pero solo 7 títulos aquí —
-  // faltaba la página "Secreta" entre el Cap. V y el Cap. VI, lo que
-  // hacía que titles[currentIndex] devolviera undefined al llegar a esa
-  // página o a las siguientes, rompiendo el .toLowerCase().
   const titles = ['Portada','Cap. I','Cap. II','Cap. III','Cap. IV','Cap. V','Secreto','Cap. VI'];
 
   pages.forEach((p, i)=>{
@@ -526,7 +522,6 @@
     dotsWrap.querySelectorAll('.dot').forEach((d,i)=> d.classList.toggle('current', i===currentIndex));
     prevBtn.disabled = currentIndex === 0;
     nextBtn.disabled = currentIndex === pages.length - 1;
-    // FIX: fallback por si en el futuro se agrega una página sin actualizar 'titles'
     captionEl.textContent = (titles[currentIndex] || ('página ' + (currentIndex+1))).toLowerCase();
   }
 
@@ -745,7 +740,7 @@
       init(el, reduceMotion){
         const numEl = el.querySelector('#ringNum');
         const labelEl = el.querySelector('#ringLabel');
-        const target = new Date('2026-10-12T00:00:00-05:00');
+        const target = new Date('2026-10-10T00:00:00-05:00');
         const now = new Date();
         const msPerDay = 24*60*60*1000;
         const diff = Math.ceil((target - now) / msPerDay);
@@ -763,7 +758,7 @@
           labelEl.textContent = 'ya cruzamos la puerta';
         }
 
-        // Reloj de arena: cae grano a grano hasta el 12 de octubre
+        // Reloj de arena: cae grano a grano hasta el 10 de octubre
         const sandTop = el.querySelector('#sandTop');
         const sandBottom = el.querySelector('#sandBottom');
         const hgLabel = el.querySelector('#hourglassLabel');
