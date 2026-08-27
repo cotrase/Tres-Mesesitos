@@ -230,9 +230,37 @@
   .dot{ width:7px; height:7px; border-radius:50%; background:var(--mist-dim); border:none; padding:0; cursor:pointer; opacity:.5; transition: opacity .2s ease, transform .2s ease; }
   .dot.current{ background:var(--button-gold); opacity:1; transform:scale(1.35); }
   .caption{ font-size:11px; color:var(--mist-dim); text-align:center; letter-spacing:.06em; }
+
+  /* ---------- music button ---------- */
+  .music-btn{
+    position:fixed; top:16px; right:16px; z-index:10;
+    width:44px; height:44px; border-radius:50%; border:none; cursor:pointer;
+    background: radial-gradient(circle at 35% 30%,#fff7e0,var(--button-gold) 75%);
+    box-shadow:0 4px 14px -4px rgba(0,0,0,.5);
+    display:flex; align-items:center; justify-content:center;
+    font-size:17px; color:#3a2a12;
+    transition: transform .2s ease;
+  }
+  .music-btn:active{ transform:scale(.92); }
+  .music-btn:focus-visible{ outline:2px solid var(--thread-blue); outline-offset:3px; }
+  .music-btn .icon-play{ display:inline; }
+  .music-btn .icon-pause{ display:none; }
+  .music-btn.playing .icon-play{ display:none; }
+  .music-btn.playing .icon-pause{ display:inline; }
+  .music-btn.playing{ animation: notePulse 1.6s ease-in-out infinite; }
+  @keyframes notePulse{ 0%,100%{ box-shadow:0 4px 14px -4px rgba(0,0,0,.5);} 50%{ box-shadow:0 4px 22px -2px rgba(230,184,94,.7);} }
+  @media (prefers-reduced-motion: reduce){ .music-btn.playing{ animation:none; } }
 </style>
 </head>
 <body>
+
+<!-- Coloca tu archivo de música en la misma carpeta que este HTML y nómbralo "cancion.mp3"
+     (o cambia el atributo src de abajo por el nombre real de tu archivo) -->
+<audio id="bgMusic" src="cancion.mp3" loop preload="none"></audio>
+<button class="music-btn" id="musicBtn" aria-label="Reproducir música" aria-pressed="false">
+  <span class="icon-play">♪</span>
+  <span class="icon-pause">❚❚</span>
+</button>
 
 <div class="ambient-sky" id="ambientSky"></div>
 
@@ -262,7 +290,7 @@
           <h2 class="chapter-title">el día que una conversación empezó a importar</h2>
           <p>Hace tres meses no sabía que una conversación cualquiera iba a terminar convirtiéndose en una de las partes favoritas de mi día.</p>
           <p>Al principio eran mensajes. Después, llamadas. Después, esas noches donde ninguno quería despedirse aunque ya no tuviéramos nada nuevo que contarnos.</p>
-          <p>Recuerdo cuando todo comenzó con esos primeros coqueteos, cuando te decía "Que estabas muy bonita" y empezamos con esos halagos que a los dos nos ponían nerviosos. Fue ahí cuando supe que había algo distinto contigo — todo se sentía demasiado hermoso y bonito.</p>
+          <p>Recuerdo cuando todo comenzó con esos primeros coqueteos, cuando te decía "Saturno bonito" y empezamos con esos halagos que a los dos nos ponían nerviosos. Fue ahí cuando supe que había algo distinto contigo — todo se sentía demasiado hermoso y bonito.</p>
           <p>Me encanta imaginar estar contigo así, más cerca, aunque el mundo entero esté de por medio. También quiero que sepas que amo tus inseguridades, esas que poco a poco has ido superando — para mí siempre han sido parte de lo más hermoso que tienes. Pase lo que pase y venga lo que venga, siempre voy a estar ahí, a tu lado, porque eres la mujer con la que quiero estar el resto de mi vida. Gracias por todo lo que me das, y por todo lo que haces por mí.</p>
           <p>Todavía me parece raro pensar que alguien que estaba tan lejos terminó siendo la persona a la que más ganas tengo de contarle cualquier cosa. Desde un meme tonto hasta cómo estuvo mi día.</p>
           <p>Me gusta verte cuando crees que nadie te está mirando. Cuando sonríes por algo que dices, cuando haces alguna expresión rara, o cuando intentas disimular que algo te dio risa.</p>
@@ -445,6 +473,32 @@
 <script>
 (function(){
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- música ----------
+  const bgMusic = document.getElementById('bgMusic');
+  const musicBtn = document.getElementById('musicBtn');
+  if(bgMusic && musicBtn){
+    musicBtn.addEventListener('click', ()=>{
+      if(bgMusic.paused){
+        bgMusic.play().catch(()=>{
+          // el archivo aún no existe o el navegador bloqueó la reproducción
+        });
+      } else {
+        bgMusic.pause();
+      }
+    });
+    bgMusic.addEventListener('play', ()=>{
+      musicBtn.classList.add('playing');
+      musicBtn.setAttribute('aria-pressed','true');
+      musicBtn.setAttribute('aria-label','Pausar música');
+    });
+    bgMusic.addEventListener('pause', ()=>{
+      musicBtn.classList.remove('playing');
+      musicBtn.setAttribute('aria-pressed','false');
+      musicBtn.setAttribute('aria-label','Reproducir música');
+    });
+  }
+
   const pages = Array.from(document.querySelectorAll('.page'));
   const dotsWrap = document.getElementById('dots');
   const captionEl = document.getElementById('caption');
